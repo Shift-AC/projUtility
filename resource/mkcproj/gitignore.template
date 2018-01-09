@@ -1,0 +1,6 @@
+*.exe
+*.o
+$1-*
+bin/*
+test/*
+temp/*

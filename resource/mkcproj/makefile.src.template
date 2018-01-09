@@ -1,0 +1,39 @@
+# ShiftAC's C/C++ makefile template for mkcproj 1.2
+
+TARGET := ../bin
+CC := gcc
+CXX := g++
+CMACRO := 
+CXXMACRO :=
+PACKAGE_PREFIX := $1
+CFLAGS := $(CMACRO) -O2 -Wall -Werror -I ./include
+CXXFLAGS := $(CXXMACRO) -std=c++11 -O2 -Wall -Werror -I ./include
+PROGS := 
+PROGNAMES := $(patsubst %,$(PACKAGE_PREFIX)-%,$(PROGS))
+OUT := 
+LIB := 
+
+$(PACKAGE_PREFIX)-%: %.cpp $(OUT)
+	$(CXX) $(CXXFLAGS) -o $(TARGET)/$@ $< $(OUT) $(LIB)
+
+$(PACKAGE_PREFIX)-%: %.cc $(OUT)
+	$(CXX) $(CXXFLAGS) -o $(TARGET)/$@ $< $(OUT) $(LIB)
+
+$(PACKAGE_PREFIX)-%: %.c $(OUT)
+	$(CC) $(CFLAGS) -o $(TARGET)/$@ $< $(OUT) $(LIB)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $<
+
+%.o: %.cc
+	$(CXX) $(CXXFLAGS) -c $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
+
+.PHONY: all
+all: $(PROGNAMES)
+
+.PHONY: clean
+clean: 
+	-rm $(OUT) $(PROGNAMES) *~ 2> /dev/null

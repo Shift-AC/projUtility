@@ -1,0 +1,28 @@
+# ShiftAC's java makefile template for mkjproj 1.2
+
+TARGET := .
+JAVAC := javac
+JAVADOC := javadoc
+MAIN_PACKAGE := 
+PACKAGES := 
+JAVASRCPATH := $(subst .,/,$(PACKAGES))
+JAVASRC := $(subst ;,/*.java ,$(JAVASRCPATH))
+LIB := ../lib
+CPLINUX := $(shell bash $(LIB)/generateLib $(LIB))
+CPWIN := $(subst :,;,$(CPLINUX))
+CP := $(CPWIN):$(CPLINUX)
+JAVAFLAGS := -encoding utf8 -Xlint:all
+JAVADOCFLAGS := -locale en_US -private 
+
+.PHONY: all
+all:
+	$(JAVAC) $(JAVAFLAGS) $(JAVASRC) -d $(TARGET) -cp "$(CP)"
+
+.PHONY: javadoc
+javadoc:
+	$(JAVADOC) $(JAVADOCFLAGS) $(JAVASRC) -d $(TARGET) -cp "$(CP)"
+
+.PHONY: clean
+clean:
+	-rm *.class *~ *.jar
+	
