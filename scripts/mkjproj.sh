@@ -3,6 +3,7 @@
 if [ $# = 0 ]; then
     echo "ShiftAC's mkjproj 1.2: initialize a java project."
     echo "Usage: $0 [name]"
+    exit
 fi
 
 pos=$(dirname $(readlink "$0" -f))

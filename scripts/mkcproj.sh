@@ -3,6 +3,7 @@
 if [ $# = 0 ]; then
     echo "ShiftAC's mkcproj 1.2: initialize a C/C++ project."
     echo "Usage: $0 [name]"
+    exit
 fi
 
 pos=$(dirname $(readlink "$0" -f))
