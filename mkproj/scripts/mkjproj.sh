@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 if [ $# = 0 ]; then
     echo "ShiftAC's mkjproj 1.2: initialize a java project."

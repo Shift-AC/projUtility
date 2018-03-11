@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 if [ $# = 0 ]; then
     echo "ShiftAC's mkcproj 1.2: initialize a C/C++ project."

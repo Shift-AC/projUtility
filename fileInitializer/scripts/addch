@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ $# = 0 ]; then
+    echo "ShiftAC's addch 0.1: create a new C/C++ header file."
+    echo "Usage: $0 [name]"
+    exit
+fi
+
+pos=$(dirname $(readlink "$0" -f))
+res="$pos/../resource"
+macro=`echo $1 | tr '[a-z]' '[A-Z]'`
+macro=__${macro//\./_}__
+
+cat "$res/hdr.template" | sed "s/\$1/$macro/g" > $1
