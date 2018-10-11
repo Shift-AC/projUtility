@@ -1,0 +1,16 @@
+# Upper level
+
+ifndef SET_CURRENT
+export CURRENT_PREFIX += .$(notdir $(realname .))
+SET_CURRENT := 1
+endif
+SUBPROJ :=
+SUBPROJ_NAME := $(addprefix .SUBPROJ-,$(SUBPROJ))
+SUBPROJ_OUT := $(addsuffix, .OUT-,$(SUBPROJ))
+ALL += $(SUBPROJ_NAME)
+
+.SUBPROJ-%: %
+    $(MAKE) -C $< progs
+
+.OUT-%: %
+    $(MAKE) -C $< this.o

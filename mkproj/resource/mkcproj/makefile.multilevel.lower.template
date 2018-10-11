@@ -1,0 +1,71 @@
+# Lower level
+
+ifndef SET_CURRENT
+export CURRENT_PREFIX += .$(notdir $(realname .))
+SET_CURRENT := 1
+endif
+SRC :=
+GEN_SRC :=
+OUT := $(addsuffix .o, $(basename $(SRC) $(GEN_SRC)))
+SCRIPTS_DIR := ./scripts
+BIN_SCRIPT := 
+LIB := 
+PROGS := $(BIN_SCRIPT)
+PROGNAMES := $(addprefix $(CURRENT_PREFIX)-,$(PROGS))
+
+$(CURRENT_PREFIX)-%: %.cpp $(TOP)/this.o
+	$(CXX) $(CXXFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
+
+$(CURRENT_PREFIX)-%: %.cc $(TOP)/this.o
+	$(CXX) $(CXXFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
+
+$(CURRENT_PREFIX)-%.sh: $(SCRIPTS_DIR)/%.sh
+	cp $< $(TARGET)/$@
+
+$(CURRENT_PREFIX)-%: %.c $(TOP)/this.o
+	$(CC) $(CFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
+
+this.o: $(OUT) $(SUBPROJ_OUT)
+    ld -r $(OUT) $(addsuffix /this.o,$(SUBPROJ)) -o this.o
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $<
+
+%.o: %.cc
+	$(CXX) $(CXXFLAGS) -c $<
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
+
+%.cpp:
+	$(SCRIPTS_DIR)/generate$@.sh > $@
+
+%.cc:
+	$(SCRIPTS_DIR)/generate$@.sh > $@
+
+%.c:
+	$(SCRIPTS_DIR)/generate$@.sh > $@
+
+.PHONY: progs
+progs: depend $(GEN_SRC) progs this.o $(PROGNAMES)
+
+.PHONY: sourceClean
+sourceClean:
+	-rm $(GEN_SRC)
+
+.PHONY: clean
+clean: sourceClean
+	-rm this.o $(PROGNAMES) *~ Makefile.dep 2> /dev/null
+
+.PHONY: linecount
+linecount: clean
+	-find | xargs cat 2> /dev/null | wc -l
+
+depend:
+	-makedepend -f- -- $(CFLAGS) -- $(SRC) > Makefile.dep 2> /dev/null
+
+# make `make` happy...
+Makefile.dep:
+	touch Makefile.dep
+
+-include Makefile.dep
