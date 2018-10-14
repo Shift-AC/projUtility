@@ -1,16 +1,24 @@
 # Upper level
 
 ifndef SET_CURRENT
-export CURRENT_PREFIX += .$(notdir $(realname .))
+export CURRENT_PREFIX := $(CURRENT_PREFIX).$(notdir $(abspath .))
 SET_CURRENT := 1
 endif
-SUBPROJ :=
+SUBPROJ := app base cutil modules util
 SUBPROJ_NAME := $(addprefix .SUBPROJ-,$(SUBPROJ))
-SUBPROJ_OUT := $(addsuffix, .OUT-,$(SUBPROJ))
+SUBPROJ_OUT := $(addprefix .OUT-,$(SUBPROJ))
+SUBPROJ_CLEAN := $(addprefix .CLEAN-,$(SUBPROJ))
 ALL += $(SUBPROJ_NAME)
 
+.PHONY: .SUBPROJ-%
 .SUBPROJ-%: %
-    $(MAKE) -C $< progs
+	$(MAKE) -C $< progs
 
+.PHONY: .OUT-%
 .OUT-%: %
-    $(MAKE) -C $< this.o
+	$(MAKE) -C $< this.o
+	
+.PHONY: .CLEAN-%
+.CLEAN-%: %
+	$(MAKE) -C $< clean
+	

@@ -1,7 +1,7 @@
 # Lower level
 
 ifndef SET_CURRENT
-export CURRENT_PREFIX += .$(notdir $(realname .))
+export CURRENT_PREFIX := $(CURRENT_PREFIX).$(notdir $(abspath .))
 SET_CURRENT := 1
 endif
 SRC :=
@@ -9,7 +9,7 @@ GEN_SRC :=
 OUT := $(addsuffix .o, $(basename $(SRC) $(GEN_SRC)))
 SCRIPTS_DIR := ./scripts
 BIN_SCRIPT := 
-LIB := 
+LIB :=
 PROGS := $(BIN_SCRIPT)
 PROGNAMES := $(addprefix $(CURRENT_PREFIX)-,$(PROGS))
 
@@ -25,9 +25,6 @@ $(CURRENT_PREFIX)-%.sh: $(SCRIPTS_DIR)/%.sh
 $(CURRENT_PREFIX)-%: %.c $(TOP)/this.o
 	$(CC) $(CFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
 
-this.o: $(OUT) $(SUBPROJ_OUT)
-    ld -r $(OUT) $(addsuffix /this.o,$(SUBPROJ)) -o this.o
-
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $<
 
@@ -37,17 +34,20 @@ this.o: $(OUT) $(SUBPROJ_OUT)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
-%.cpp:
+%.cpp: $(SCRIPTS_DIR)/generate%.cpp.sh
 	$(SCRIPTS_DIR)/generate$@.sh > $@
 
-%.cc:
+%.cc: $(SCRIPTS_DIR)/generate%.cc.sh
 	$(SCRIPTS_DIR)/generate$@.sh > $@
 
-%.c:
+%.c: $(SCRIPTS_DIR)/generate%.c.sh
 	$(SCRIPTS_DIR)/generate$@.sh > $@
+
+this.o: Makefile.dep $(OUT) $(SUBPROJ_OUT)
+	ld -r $(OUT) $(addsuffix /this.o,$(SUBPROJ)) -o this.o
 
 .PHONY: progs
-progs: depend $(GEN_SRC) progs this.o $(PROGNAMES)
+progs: $(SUBPROJ_NAME) Makefile.dep $(GEN_SRC) this.o $(PROGNAMES)
 
 .PHONY: sourceClean
 sourceClean:
@@ -55,17 +55,13 @@ sourceClean:
 
 .PHONY: clean
 clean: sourceClean
-	-rm this.o $(PROGNAMES) *~ Makefile.dep 2> /dev/null
+	-rm *.o $(PROGNAMES) *~ Makefile.dep 2> /dev/null
 
 .PHONY: linecount
 linecount: clean
 	-find | xargs cat 2> /dev/null | wc -l
 
-depend:
-	-makedepend -f- -- $(CFLAGS) -- $(SRC) > Makefile.dep 2> /dev/null
-
-# make `make` happy...
 Makefile.dep:
-	touch Makefile.dep
+	-makedepend -f- -- $(CFLAGS) -- $(SRC) > Makefile.dep 2> /dev/null
 
 -include Makefile.dep

@@ -1,23 +1,23 @@
 # Top level
 
-export TOP := $(realname .)
+ifndef TOP_LOOP
+export TOP_LOOP := 1
+export TOP := $(abspath .)
 export INCLUDE := $(TOP)/include
-TARGET ?= ../bin
-export TARGET := $(realname ../bin)
-export PACKAGE_PREFIX :=
-ifndef SET_CURRENT
-export CURRENT_PREFIX += .$(notdir $(realname .))
-SET_CURRENT := 1
-endif
-export cc := gcc
-export cxx := g++
-export CMACRO := 
+export TARGET := $(abspath ../bin)
+export PACKAGE_PREFIX := m3
+export CURRENT_PREFIX := $(PACKAGE_PREFIX)
+export CC := gcc
+export CXX := g++
+export CMACRO :=
 export CXXMACRO := $(CMACRO)
-COMMONFLAGS := -I $(INCLUDE)
+COMMONFLAGS := -I "$(INCLUDE)"
 export CFLAGS := $(CMACRO) $(COMMONFLAGS)
 export CXXFLAGS := $(CXXMACRO) $(COMMONFLAGS)
+endif
+SET_CURRENT := 1
 
-.PHONY all
+.PHONY: all
 all:
-    $(MAKE) this.o
-    $(MAKE) progs
+	$(MAKE) this.o
+	$(MAKE) progs
