@@ -1,17 +1,44 @@
-# Upper level
+# MIT License
+# -----------
+# 
+# Copyright (c) 2018-2021 Shift Clan (http://shift-ac.com)
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following
+# conditions:
+# 
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# ShiftAC's Makefile template for hierarchical C/C++ projects (mkcproj 1.4).
+
+# Upper level: Appears in any directories that include sub-source-directories.
 
 ifndef SET_CURRENT
-export CURRENT_PREFIX := $(CURRENT_PREFIX).$(notdir $(abspath .))
+export CURRENT_PREFIX := $(CURRENT_PREFIX).$(notdir $(subst $(SPACE),^,$(abspath .)))
 SET_CURRENT := 1
 endif
-SUBPROJ := app base cutil modules util
+SUBPROJ := 
 SUBPROJ_NAME := $(addprefix .SUBPROJ-,$(SUBPROJ))
 SUBPROJ_OUT := $(addprefix .OUT-,$(SUBPROJ))
 SUBPROJ_CLEAN := $(addprefix .CLEAN-,$(SUBPROJ))
 ALL += $(SUBPROJ_NAME)
 
 .PHONY: .SUBPROJ-%
-.SUBPROJ-%: %
+.SUBPROJ-%: % .OUT-%
 	$(MAKE) -C $< progs
 
 .PHONY: .OUT-%
@@ -21,4 +48,3 @@ ALL += $(SUBPROJ_NAME)
 .PHONY: .CLEAN-%
 .CLEAN-%: %
 	$(MAKE) -C $< clean
-	

@@ -1,60 +1,101 @@
-# Lower level
+# MIT License
+# -----------
+# 
+# Copyright (c) 2018-2021 Shift Clan (http://shift-ac.com)
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following
+# conditions:
+# 
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+
+# ShiftAC's Makefile template for hierarchical C/C++ projects (mkcproj 1.4).
+
+# Lower level: Appears in any directories that include source files to compile.
 
 ifndef SET_CURRENT
-export CURRENT_PREFIX := $(CURRENT_PREFIX).$(notdir $(abspath .))
+export CURRENT_PREFIX := $(CURRENT_PREFIX).$(notdir $(subst $(SPACE),^,$(abspath .)))
 SET_CURRENT := 1
 endif
-SRC :=
-GEN_SRC :=
+IGNORE_SRC :=
+GEN_SRC := 
+PROG_SRC := 
+SRC := $(filter-out $(IGNORE_SRC) $(GEN_SRC) $(PROG_SRC), $(wildcard *.c) $(wildcard *.cc) $(wildcard *.cpp))
 OUT := $(addsuffix .o, $(basename $(SRC) $(GEN_SRC)))
 SCRIPTS_DIR := ./scripts
+LOCAL_COMMON_FLAGS := 
+LOCAL_CFLAGS := $(LOCAL_COMMON_FLAGS)
+LOCAL_CXXFLAGS := $(LOCAL_COMMON_FLAGS)
 BIN_SCRIPT := 
 LIB :=
-PROGS := $(BIN_SCRIPT)
-PROGNAMES := $(addprefix $(CURRENT_PREFIX)-,$(PROGS))
+PROGNAMES := $(addprefix $(CURRENT_PREFIX)-,$(BIN_SCRIPT) $(basename $(PROG_SRC)))
 
-$(CURRENT_PREFIX)-%: %.cpp $(TOP)/this.o
-	$(CXX) $(CXXFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
+define gen-target-rule-cpp
+$(CURRENT_PREFIX)-$(basename $(1)): $(1) $(subst $(SPACE),\ ,$(TOP))/this.o
+	$(CXX) $(CXXFLAGS) $(LOCAL_CXXFLAGS) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< "$(TOP)/this.o" $(LIB)
+endef
 
-$(CURRENT_PREFIX)-%: %.cc $(TOP)/this.o
-	$(CXX) $(CXXFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
+define gen-target-rule-cc
+$(CURRENT_PREFIX)-$(basename $(1)): $(1) $(subst $(SPACE),\ ,$(TOP))/this.o
+	$(CXX) $(CXXFLAGS) $(LOCAL_CXXFLAGS) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< "$(TOP)/this.o" $(LIB)
+endef
 
-$(CURRENT_PREFIX)-%.sh: $(SCRIPTS_DIR)/%.sh
-	cp $< $(TARGET)/$@
+define gen-target-rule-c
+$(CURRENT_PREFIX)-$(basename $(1)): $(1) $(subst $(SPACE),\ ,$(TOP))/this.o
+	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< "$(TOP)/this.o" $(LIB)
+endef
 
-$(CURRENT_PREFIX)-%: %.c $(TOP)/this.o
-	$(CC) $(CFLAGS) -o $(TARGET)/$(shell echo $@ | tr '[A-Z]' '[a-z]') $< $(TOP)/this.o $(LIB)
+define gen-target-rule-sh
+$(1): $(subst $(SPACE),\ ,$(SCRIPTS_DIR))/%.sh
+	cp $$< $(TARGET)/$$@
+endef
+
+define gen-source-rule-all-c
+$(1): $(SCRIPTS_DIR)/generate$(1).sh
+	$(SCRIPTS_DIR)/generate$$@.sh > $$@
+endef
+
+$(foreach i,$(filter %.cpp,$(PROG_SRC)),$(eval $(call gen-target-rule-cpp,$(i))))
+$(foreach i,$(filter %.cc,$(PROG_SRC)),$(eval $(call gen-target-rule-cc,$(i))))
+$(foreach i,$(filter %.c,$(PROG_SRC)),$(eval $(call gen-target-rule-c,$(i))))
+$(foreach i,$(PROGS_SH),$(eval $(call gen-target-rule-sh,$(i))))
+$(foreach i,$(GEN_SRC),$(eval $(call gen-source-rule-all-c,$(i))))
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) $(LOCAL_CXXFLAGS) -c $<
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) $(LOCAL_CXXFLAGS) -c $<
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -c $<
 
-%.cpp: $(SCRIPTS_DIR)/generate%.cpp.sh
-	$(SCRIPTS_DIR)/generate$@.sh > $@
-
-%.cc: $(SCRIPTS_DIR)/generate%.cc.sh
-	$(SCRIPTS_DIR)/generate$@.sh > $@
-
-%.c: $(SCRIPTS_DIR)/generate%.c.sh
-	$(SCRIPTS_DIR)/generate$@.sh > $@
-
-this.o: Makefile.dep $(OUT) $(SUBPROJ_OUT)
+this.o: Makefile.dep $(OUT) $(SUBPROJ_OUT) $(GEN_SRC)
 	ld -r $(OUT) $(addsuffix /this.o,$(SUBPROJ)) -o this.o
 
 .PHONY: progs
-progs: $(SUBPROJ_NAME) Makefile.dep $(GEN_SRC) this.o $(PROGNAMES)
+progs: $(SUBPROJ_NAME) $(PROGNAMES)
 
 .PHONY: sourceClean
 sourceClean:
 	-rm $(GEN_SRC)
 
 .PHONY: clean
-clean: sourceClean
+clean: sourceClean $(SUBPROJ_CLEAN)
 	-rm *.o $(PROGNAMES) *~ Makefile.dep 2> /dev/null
 
 .PHONY: linecount
@@ -62,6 +103,6 @@ linecount: clean
 	-find | xargs cat 2> /dev/null | wc -l
 
 Makefile.dep:
-	-makedepend -f- -- $(CFLAGS) -- $(SRC) > Makefile.dep 2> /dev/null
+	-makedepend -f- -- $(COMMONFLAGS) $(LOCAL_COMMON_FLAGS) -- $(SRC) > Makefile.dep 2> /dev/null
 
 -include Makefile.dep

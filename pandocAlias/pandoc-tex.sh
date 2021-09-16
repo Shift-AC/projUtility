@@ -1,0 +1,1 @@
+pandoc.exe -t latex --pdf-engine=xelatex -s -VCJKoptions=BoldFont="SimHei" -VCJKmainfont="SimSun" "$@"
