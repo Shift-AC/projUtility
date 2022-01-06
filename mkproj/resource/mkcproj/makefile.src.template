@@ -1,7 +1,7 @@
 # MIT License
 # -----------
 # 
-# Copyright (c) 2018-2021 Shift Clan (http://shift-ac.com)
+# Copyright (c) 2018-2021 Yunzhe Ni (http://shift-ac.com)
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
 # files (the "Software"), to deal in the Software without
@@ -26,7 +26,7 @@
 # ShiftAC's C/C++ makefile template for mkcproj 1.4
 
 TARGET := ../bin
-PACKAGE_PREFIX :=
+PACKAGE_PREFIX := rlnc
 CC := gcc
 CXX := g++
 CMACRO := 
@@ -34,7 +34,7 @@ CXXMACRO := $(CMACRO)
 COMMONFLAGS := 
 CFLAGS := $(CMACRO) $(COMMONFLAGS)
 CXXFLAGS := $(CXXMACRO) $(COMMONFLAGS)
-IGNORE_SRC :=
+IGNORE_SRC := 
 GEN_SRC := 
 BIN_SRC := 
 SRC := $(filter-out $(BIN_SRC) $(IGNORE_SRC) $(GEN_SRC),$(wildcard *.c) $(wildcard *.cc))
@@ -42,37 +42,40 @@ OUT := $(addsuffix .o, $(basename $(SRC) $(GEN_SRC)))
 SCRIPTS_DIR := ./scripts
 BIN_SCRIPT := 
 LIB := 
-PROGS := $(BIN_SCRIPT) $(basename $(BIN_SRC))
-PROGNAMES := $(addprefix $(PACKAGE_PREFIX)-,$(PROGS))
+PROGS := $(BIN_SCRIPT)
+PROGS_SH := $(basename $(BIN_SRC))
+PROGNAMES := $(addprefix $(PACKAGE_PREFIX)-,$(PROGS) $(PROGS_SH))
+
+# begin user-defined variables
+# end user-defined variables
 
 define gen-target-rule-cpp
-$(CURRENT_PREFIX)-$(basename $(1)): $(1) $(subst $(SPACE),\ ,$(TOP))/this.o
-	$(CXX) $(CXXFLAGS) $(LOCAL_CXXFLAGS) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< "$(TOP)/this.o" $(LIB)
-endef
-
-define gen-target-rule-cc
-$(CURRENT_PREFIX)-$(basename $(1)): $(1) $(subst $(SPACE),\ ,$(TOP))/this.o
-	$(CXX) $(CXXFLAGS) $(LOCAL_CXXFLAGS) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< "$(TOP)/this.o" $(LIB)
+$(PACKAGE_PREFIX)-$(basename $(1)): $(1) $(OUT)
+	$(eval TARGET_FLAG_NAME := FLAGS_$$(shell echo $(basename $(1)) | tr '[a-z]' '[A-Z]'))
+	$(CXX) $(CXXFLAGS) $($(TARGET_FLAG_NAME)) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< $(OUT) $(LIB)
 endef
 
 define gen-target-rule-c
-$(CURRENT_PREFIX)-$(basename $(1)): $(1) $(subst $(SPACE),\ ,$(TOP))/this.o
-	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< "$(TOP)/this.o" $(LIB)
+$(PACKAGE_PREFIX)-$(basename $(1)): $(1) $(OUT)
+	$(eval TARGET_FLAG_NAME := FLAGS_$$(shell echo $(basename $(1)) | tr '[a-z]' '[A-Z]'))
+	$(CC) $(CFLAGS) $($(TARGET_FLAG_NAME)) -o "$(TARGET)/$$(shell echo $$@ | tr '[A-Z]' '[a-z]')" $$< $(OUT) $(LIB)
 endef
 
 define gen-target-rule-sh
-$(1): $(subst $(SPACE),\ ,$(SCRIPTS_DIR))/%.sh
+$(1): $(SCRIPTS_DIR)/%.sh
 	cp $$< $(TARGET)/$$@
 endef
 
 define gen-source-rule-all-c
 $(1): $(SCRIPTS_DIR)/generate$(1).sh
-	$(SCRIPTS_DIR)/generate$$@.sh > $$@
+	$(SCRIPTS_DIR)/generate$$@.sh $$@
 endef
 
-$(foreach i,$(filter %.cpp,$(PROG_SRC)),$(eval $(call gen-target-rule-cpp,$(i))))
-$(foreach i,$(filter %.cc,$(PROG_SRC)),$(eval $(call gen-target-rule-cc,$(i))))
-$(foreach i,$(filter %.c,$(PROG_SRC)),$(eval $(call gen-target-rule-c,$(i))))
+.PHONY: all
+all: depend $(GEN_SRC) $(OUT) $(PROGNAMES)
+
+$(foreach i,$(filter %.cpp %.cc,$(BIN_SRC)),$(eval $(call gen-target-rule-cpp,$(i))))
+$(foreach i,$(filter %.c,$(BIN_SRC)),$(eval $(call gen-target-rule-c,$(i))))
 $(foreach i,$(PROGS_SH),$(eval $(call gen-target-rule-sh,$(i))))
 $(foreach i,$(GEN_SRC),$(eval $(call gen-source-rule-all-c,$(i))))
 
@@ -84,9 +87,6 @@ $(foreach i,$(GEN_SRC),$(eval $(call gen-source-rule-all-c,$(i))))
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
-
-.PHONY: all
-all: depend $(GEN_SRC) $(OUT) $(PROGNAMES)
 
 .PHONY: sourceClean
 sourceClean:
